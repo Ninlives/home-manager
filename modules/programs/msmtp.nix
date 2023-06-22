@@ -18,7 +18,7 @@ let
         host = smtp.host;
         from = address;
         auth = "on";
-        user = userName;
+        user = smtp.userName;
         tls = onOff smtp.tls.enable;
         tls_starttls = onOff smtp.tls.useStartTls;
       } // optionalAttrs (msmtp.tls.fingerprint != null) {
@@ -26,8 +26,8 @@ let
       } // optionalAttrs (smtp.port != null) { port = toString smtp.port; }
         // optionalAttrs (smtp.tls.certificatesFile != null) {
           tls_trust_file = smtp.tls.certificatesFile;
-        } // optionalAttrs (passwordCommand != null) {
-          passwordeval = toString passwordCommand;
+        } // optionalAttrs (smtp.passwordCommand != null) {
+          passwordeval = toString smtp.passwordCommand;
         } // msmtp.extraConfig) ++ optional primary "account default : ${name}"
       ++ map (alias: ''
 

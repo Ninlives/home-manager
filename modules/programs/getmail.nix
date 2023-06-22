@@ -10,7 +10,7 @@ let
   renderAccountConfig = account:
     with account;
     let
-      passCmd = concatMapStringsSep ", " (x: "'${x}'") passwordCommand;
+      passCmd = concatMapStringsSep ", " (x: "'${x}'") imap.passwordCommand;
       renderedMailboxes = concatMapStrings (x: "'${x}', ") getmail.mailboxes;
       retrieverType = if imap.tls.enable then
         "SimpleIMAPSSLRetriever"
@@ -30,7 +30,7 @@ let
       type = ${retrieverType}
       server = ${imap.host}
       ${optionalString (imap.port != null) "port = ${toString imap.port}"}
-      username = ${userName}
+      username = ${imap.userName}
       password_command = (${passCmd})
       mailboxes = ( ${renderedMailboxes} )
 

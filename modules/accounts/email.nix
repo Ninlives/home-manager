@@ -6,6 +6,12 @@ let
 
   cfg = config.accounts.email;
 
+  submoduleWithParentConfig = parentConfig: modules: types.submoduleWith {
+      shorthandOnlyDefinesConfig = true;
+      specialArgs = { inherit parentConfig; };
+      modules = toList modules;
+  };
+
   gpgModule = types.submodule {
     options = {
       key = mkOption {
@@ -106,7 +112,7 @@ let
     };
   };
 
-  imapModule = types.submodule {
+  imapModule = { parentConfig, ... }: {
     options = {
       host = mkOption {
         type = types.str;
@@ -126,6 +132,25 @@ let
         '';
       };
 
+      userName = mkOption {
+        type = types.nullOr types.str;
+        description = ''
+          The IMAP server username of this account.
+        '';
+        default = parentConfig.userName;
+      };
+
+      passwordCommand = mkOption {
+        type = types.nullOr (types.either types.str (types.listOf types.str));
+        apply = p: if isString p then splitString " " p else p;
+        example = "secret-tool lookup email me@example.org";
+        description = ''
+          A command, which when run writes the account password on
+          standard output.
+        '';
+        default = parentConfig.passwordCommand;
+      };
+
       tls = mkOption {
         type = tlsModule;
         default = { };
@@ -136,7 +161,7 @@ let
     };
   };
 
-  jmapModule = types.submodule {
+  jmapModule = { parentConfig, ... }: {
     options = {
       host = mkOption {
         type = types.nullOr types.str;
@@ -150,6 +175,25 @@ let
           <code>host</code> is preferred by applications when establishing a
           session.
         '';
+      };
+
+      userName = mkOption {
+        type = types.nullOr types.str;
+        description = ''
+          The JMAP server username of this account.
+        '';
+        default = parentConfig.userName;
+      };
+
+      passwordCommand = mkOption {
+        type = types.nullOr (types.either types.str (types.listOf types.str));
+        apply = p: if isString p then splitString " " p else p;
+        example = "secret-tool lookup email me@example.org";
+        description = ''
+          A command, which when run writes the account password on
+          standard output.
+        '';
+        default = parentConfig.passwordCommand;
       };
 
       sessionUrl = mkOption {
@@ -168,7 +212,7 @@ let
     };
   };
 
-  smtpModule = types.submodule {
+  smtpModule = { parentConfig, ... }: {
     options = {
       host = mkOption {
         type = types.str;
@@ -186,6 +230,25 @@ let
           The port on which the SMTP server listens. If
           <literal>null</literal> then the default port is used.
         '';
+      };
+
+      userName = mkOption {
+        type = types.nullOr types.str;
+        description = ''
+          The SMTP server username of this account.
+        '';
+        default = parentConfig.userName;
+      };
+
+      passwordCommand = mkOption {
+        type = types.nullOr (types.either types.str (types.listOf types.str));
+        apply = p: if isString p then splitString " " p else p;
+        example = "secret-tool lookup email me@example.org";
+        description = ''
+          A command, which when run writes the account password on
+          standard output.
+        '';
+        default = parentConfig.passwordCommand;
       };
 
       tls = mkOption {
@@ -286,7 +349,7 @@ let
         default = null;
         description = ''
           The server username of this account. This will be used as
-          the SMTP, IMAP, and JMAP user name.
+          the default SMTP, IMAP, and JMAP user name.
         '';
       };
 
@@ -344,7 +407,7 @@ let
       };
 
       imap = mkOption {
-        type = types.nullOr imapModule;
+        type = types.nullOr (submoduleWithParentConfig config imapModule);
         default = null;
         description = ''
           The IMAP configuration to use for this account.
@@ -352,7 +415,7 @@ let
       };
 
       jmap = mkOption {
-        type = types.nullOr jmapModule;
+        type = types.nullOr (submoduleWithParentConfig config jmapModule);
         default = null;
         description = ''
           The JMAP configuration to use for this account.
@@ -376,7 +439,7 @@ let
       };
 
       smtp = mkOption {
-        type = types.nullOr smtpModule;
+        type = types.nullOr (submoduleWithParentConfig config smtpModule);
         default = null;
         description = ''
           The SMTP configuration to use for this account.
