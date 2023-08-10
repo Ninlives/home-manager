@@ -11,9 +11,10 @@ let
   aliases = {
     ls = "${pkgs.lsd}/bin/lsd";
     ll = "${pkgs.lsd}/bin/lsd -l";
-    la = "${pkgs.lsd}/bin/lsd -a";
+    la = "${pkgs.lsd}/bin/lsd -A";
     lt = "${pkgs.lsd}/bin/lsd --tree";
-    lla = "${pkgs.lsd}/bin/lsd -la";
+    lla = "${pkgs.lsd}/bin/lsd -lA";
+    llt = "${pkgs.lsd}/bin/lsd -l --tree";
   };
 
 in {
@@ -39,8 +40,8 @@ in {
       };
       description = ''
         Configuration written to
-        <filename>$XDG_CONFIG_HOME/lsd/config.yaml</filename>. See
-        <link xlink:href="https://github.com/Peltoche/lsd#config-file-content"/>
+        {file}`$XDG_CONFIG_HOME/lsd/config.yaml`. See
+        <https://github.com/Peltoche/lsd#config-file-content>
         for supported values.
       '';
     };

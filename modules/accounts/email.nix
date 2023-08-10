@@ -17,7 +17,7 @@ let
       key = mkOption {
         type = types.str;
         description = ''
-          The key to use as listed in <command>gpg --list-keys</command>.
+          The key to use as listed in {command}`gpg --list-keys`.
         '';
       };
 
@@ -105,7 +105,7 @@ let
         description = ''
           Path to file containing certificate authorities that should
           be used to validate the connection authenticity. If
-          <literal>null</literal> then the system default is used.
+          `null` then the system default is used.
           Note, if set then the system default may still be accepted.
         '';
       };
@@ -128,7 +128,7 @@ let
         example = 993;
         description = ''
           The port on which the IMAP server listens. If
-          <literal>null</literal> then the default port is used.
+          `null` then the default port is used.
         '';
       };
 
@@ -169,10 +169,9 @@ let
         example = "jmap.example.org";
         description = ''
           Hostname of JMAP server.
-          </para><para>
-          If both this option and <xref
-          linkend="opt-accounts.email.accounts._name_.jmap.sessionUrl"/> are specified,
-          <code>host</code> is preferred by applications when establishing a
+
+          If both this option and [](#opt-accounts.email.accounts._name_.jmap.sessionUrl) are specified,
+          `host` is preferred by applications when establishing a
           session.
         '';
       };
@@ -202,10 +201,9 @@ let
         example = "https://jmap.example.org:443/.well-known/jmap";
         description = ''
           URL for the JMAP Session resource.
-          </para><para>
-          If both this option and <xref
-          linkend="opt-accounts.email.accounts._name_.jmap.host"/> are specified,
-          <code>host</code> is preferred by applications when establishing a
+
+          If both this option and [](#opt-accounts.email.accounts._name_.jmap.host) are specified,
+          `host` is preferred by applications when establishing a
           session.
         '';
       };
@@ -228,7 +226,7 @@ let
         example = 465;
         description = ''
           The port on which the SMTP server listens. If
-          <literal>null</literal> then the default port is used.
+          `null` then the default port is used.
         '';
       };
 
@@ -318,7 +316,7 @@ let
           Some email providers have peculiar behavior that require
           special treatment. This option is therefore intended to
           indicate the nature of the provider.
-          </para><para>
+
           When this indicates a specific provider then, for example,
           the IMAP, SMTP, and JMAP server configuration may be set
           automatically.

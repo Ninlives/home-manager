@@ -51,6 +51,7 @@ let
     ./programs/afew.nix
     ./programs/alacritty.nix
     ./programs/alot.nix
+    ./programs/antidote.nix
     ./programs/aria2.nix
     ./programs/astroid.nix
     ./programs/atuin.nix
@@ -69,6 +70,7 @@ let
     ./programs/chromium.nix
     ./programs/command-not-found/command-not-found.nix
     ./programs/comodoro.nix
+    ./programs/darcs.nix
     ./programs/dircolors.nix
     ./programs/direnv.nix
     ./programs/discocss.nix
@@ -85,6 +87,7 @@ let
     ./programs/gallery-dl.nix
     ./programs/getmail.nix
     ./programs/gh.nix
+    ./programs/gh-dash.nix
     ./programs/git-cliff.nix
     ./programs/git-credential-oauth.nix
     ./programs/git.nix
@@ -167,6 +170,7 @@ let
     ./programs/pls.nix
     ./programs/powerline-go.nix
     ./programs/pubs.nix
+    ./programs/pyenv.nix
     ./programs/pylint.nix
     ./programs/qutebrowser.nix
     ./programs/rbw.nix
@@ -305,9 +309,11 @@ let
     ./services/screen-locker.nix
     ./services/sctd.nix
     ./services/spotifyd.nix
+    ./services/ssh-agent.nix
     ./services/stalonetray.nix
     ./services/status-notifier-watcher.nix
     ./services/swayidle.nix
+    ./services/swayosd.nix
     ./services/sxhkd.nix
     ./services/syncthing.nix
     ./services/systembus-notify.nix
@@ -325,6 +331,7 @@ let
     ./services/window-managers/bspwm/default.nix
     ./services/window-managers/fluxbox.nix
     ./services/window-managers/herbstluftwm.nix
+    ./services/window-managers/hyprland.nix
     ./services/window-managers/i3-sway/i3.nix
     ./services/window-managers/i3-sway/sway.nix
     ./services/window-managers/i3-sway/swaynag.nix

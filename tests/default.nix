@@ -30,7 +30,7 @@ let
 
       # Avoid including documentation since this will cause
       # unnecessary rebuilds of the tests.
-      manual.manpages.enable = false;
+      manual.manpages.enable = lib.mkDefault false;
 
       imports = [ ./asserts.nix ./big-test.nix ./stubs.nix ];
 
@@ -52,11 +52,13 @@ import nmt {
     ./modules/files
     ./modules/home-environment
     ./modules/misc/fontconfig
+    ./modules/misc/manual
     ./modules/misc/nix
     ./modules/misc/specialisation
     ./modules/programs/aerc
     ./modules/programs/alacritty
     ./modules/programs/alot
+    ./modules/programs/antidote
     ./modules/programs/aria2
     ./modules/programs/atuin
     ./modules/programs/autojump
@@ -67,6 +69,7 @@ import nmt {
     ./modules/programs/browserpass
     ./modules/programs/btop
     ./modules/programs/comodoro
+    ./modules/programs/darcs
     ./modules/programs/dircolors
     ./modules/programs/direnv
     ./modules/programs/emacs
@@ -74,6 +77,7 @@ import nmt {
     ./modules/programs/fish
     ./modules/programs/gallery-dl
     ./modules/programs/gh
+    ./modules/programs/gh-dash
     ./modules/programs/git-cliff
     ./modules/programs/git
     ./modules/programs/gpg
@@ -87,6 +91,7 @@ import nmt {
     ./modules/programs/k9s
     ./modules/programs/kakoune
     ./modules/programs/kitty
+    ./modules/programs/khal
     ./modules/programs/ledger
     ./modules/programs/less
     ./modules/programs/lf
@@ -114,6 +119,7 @@ import nmt {
     ./modules/programs/pls
     ./modules/programs/powerline-go
     ./modules/programs/pubs
+    ./modules/programs/pyenv
     ./modules/programs/qutebrowser
     ./modules/programs/readline
     ./modules/programs/ripgrep
@@ -142,6 +148,8 @@ import nmt {
     ./modules/xresources
   ] ++ lib.optionals isDarwin [
     ./modules/launchd
+    ./modules/services/git-sync-darwin
+    ./modules/services/imapnotify-darwin
     ./modules/targets-darwin
   ] ++ lib.optionals isLinux [
     ./modules/config/i18n
@@ -200,6 +208,7 @@ import nmt {
     ./modules/services/gpg-agent
     ./modules/services/gromit-mpx
     ./modules/services/home-manager-auto-upgrade
+    ./modules/services/imapnotify
     ./modules/services/kanshi
     ./modules/services/lieer
     ./modules/services/mopidy
@@ -217,6 +226,7 @@ import nmt {
     ./modules/services/redshift-gammastep
     ./modules/services/screen-locker
     ./modules/services/swayidle
+    ./modules/services/swayosd
     ./modules/services/sxhkd
     ./modules/services/syncthing/linux
     ./modules/services/trayer
@@ -224,6 +234,7 @@ import nmt {
     ./modules/services/udiskie
     ./modules/services/window-managers/bspwm
     ./modules/services/window-managers/herbstluftwm
+    ./modules/services/window-managers/hyprland
     ./modules/services/window-managers/i3
     ./modules/services/window-managers/spectrwm
     ./modules/services/window-managers/sway
