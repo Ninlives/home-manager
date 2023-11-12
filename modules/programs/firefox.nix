@@ -59,6 +59,24 @@ let
       ${extraPrefs}
     '';
 
+  mkContainersJson = containers:
+    let
+      containerToIdentity = _: container: {
+        userContextId = container.id;
+        name = container.name;
+        icon = container.icon;
+        color = container.color;
+        public = true;
+      };
+    in ''
+      ${builtins.toJSON {
+        version = 4;
+        lastUserContextId =
+          elemAt (mapAttrsToList (_: container: container.id) containers) 0;
+        identities = mapAttrsToList containerToIdentity containers;
+      }}
+    '';
+
   firefoxBookmarksFile = bookmarks:
     let
       indent = level:
@@ -111,6 +129,50 @@ let
       </p></DL>
     '';
 
+  mkNoDuplicateAssertion = entities: entityKind:
+    (let
+      # Return an attribute set with entity IDs as keys and a list of
+      # entity names with corresponding ID as value. An ID is present in
+      # the result only if more than one entity has it. The argument
+      # entities is a list of AttrSet of one id/name pair.
+      findDuplicateIds = entities:
+        filterAttrs (_entityId: entityNames: length entityNames != 1)
+        (zipAttrs entities);
+
+      duplicates = findDuplicateIds (mapAttrsToList
+        (entityName: entity: { "${toString entity.id}" = entityName; })
+        entities);
+
+      mkMsg = entityId: entityNames:
+        "  - ID ${entityId} is used by " + concatStringsSep ", " entityNames;
+    in {
+      assertion = duplicates == { };
+      message = ''
+        Must not have a Firefox ${entityKind} with an existing ID but
+      '' + concatStringsSep "\n" (mapAttrsToList mkMsg duplicates);
+    });
+
+  wrapPackage = package:
+    let
+      # The configuration expected by the Firefox wrapper.
+      fcfg = { enableGnomeExtensions = cfg.enableGnomeExtensions; };
+
+      # A bit of hackery to force a config into the wrapper.
+      browserName =
+        package.browserName or (builtins.parseDrvName package.name).name;
+
+      # The configuration expected by the Firefox wrapper builder.
+      bcfg = setAttrByPath [ browserName ] fcfg;
+
+    in if package == null then
+      null
+    else if isDarwin then
+      package
+    else if versionAtLeast config.home.stateVersion "19.09" then
+      package.override (old: { cfg = old.cfg or { } // fcfg; })
+    else
+      (pkgs.wrapFirefox.override { config = bcfg; }) package { };
+
 in {
   meta.maintainers = [ maintainers.rycee maintainers.kira-bruneau ];
 
@@ -158,8 +220,14 @@ in {
           The Firefox package to use. If state version ≥ 19.09 then
           this should be a wrapped Firefox package. For earlier state
           versions it should be an unwrapped Firefox package.
-          Set to <literal>null</literal> to disable installing Firefox.
+          Set to `null` to disable installing Firefox.
         '';
+      };
+
+      finalPackage = mkOption {
+        type = with types; nullOr package;
+        readOnly = true;
+        description = "Resulting Firefox package.";
       };
 
       profiles = mkOption {
@@ -434,6 +502,83 @@ in {
               };
             };
 
+            containers = mkOption {
+              type = types.attrsOf (types.submodule ({ name, ... }: {
+                options = {
+                  name = mkOption {
+                    type = types.str;
+                    default = name;
+                    description = "Container name, e.g., shopping.";
+                  };
+
+                  id = mkOption {
+                    type = types.ints.unsigned;
+                    default = 0;
+                    description = ''
+                      Container ID. This should be set to a unique number per container in this profile.
+                    '';
+                  };
+
+                  # List of colors at
+                  # https://searchfox.org/mozilla-central/rev/5ad226c7379b0564c76dc3b54b44985356f94c5a/toolkit/components/extensions/parent/ext-contextualIdentities.js#32
+                  color = mkOption {
+                    type = types.enum [
+                      "blue"
+                      "turquoise"
+                      "green"
+                      "yellow"
+                      "orange"
+                      "red"
+                      "pink"
+                      "purple"
+                      "toolbar"
+                    ];
+                    default = "pink";
+                    description = "Container color.";
+                  };
+
+                  icon = mkOption {
+                    type = types.enum [
+                      "briefcase"
+                      "cart"
+                      "circle"
+                      "dollar"
+                      "fence"
+                      "fingerprint"
+                      "gift"
+                      "vacation"
+                      "food"
+                      "fruit"
+                      "pet"
+                      "tree"
+                      "chill"
+                    ];
+                    default = "fruit";
+                    description = "Container icon.";
+                  };
+                };
+              }));
+              default = { };
+              example = {
+                "shopping" = {
+                  id = 1;
+                  color = "blue";
+                  icon = "cart";
+                };
+                "dangerous" = {
+                  id = 2;
+                  color = "red";
+                  icon = "fruit";
+                };
+              };
+              description = ''
+                Attribute set of container configurations. See
+                [Multi-Account
+                Containers](https://support.mozilla.org/en-US/kb/containers)
+                for more information.
+              '';
+            };
+
             extensions = mkOption {
               type = types.listOf types.package;
               default = [ ];
@@ -490,18 +635,10 @@ in {
           (", namely " + concatStringsSep ", " defaults);
       })
 
-      (let
-        duplicates = filterAttrs (_: v: length v != 1) (zipAttrs
-          (mapAttrsToList (n: v: { "${toString v.id}" = n; }) (cfg.profiles)));
-
-        mkMsg = n: v: "  - ID ${n} is used by ${concatStringsSep ", " v}";
-      in {
-        assertion = duplicates == { };
-        message = ''
-          Must not have Firefox profiles with duplicate IDs but
-        '' + concatStringsSep "\n" (mapAttrsToList mkMsg duplicates);
-      })
-    ];
+      (mkNoDuplicateAssertion cfg.profiles "profile")
+    ] ++ (mapAttrsToList
+      (_: profile: mkNoDuplicateAssertion profile.containers "container")
+      cfg.profiles);
 
     warnings = optional (cfg.enableGnomeExtensions or false) ''
       Using 'programs.firefox.enableGnomeExtensions' has been deprecated and
@@ -510,24 +647,9 @@ in {
       its example for how to do this.
     '';
 
-    home.packages = let
-      # The configuration expected by the Firefox wrapper.
-      fcfg = { enableGnomeExtensions = cfg.enableGnomeExtensions; };
+    programs.firefox.finalPackage = wrapPackage cfg.package;
 
-      # A bit of hackery to force a config into the wrapper.
-      browserName = cfg.package.browserName or (builtins.parseDrvName
-        cfg.package.name).name;
-
-      # The configuration expected by the Firefox wrapper builder.
-      bcfg = setAttrByPath [ browserName ] fcfg;
-
-      package = if isDarwin then
-        cfg.package
-      else if versionAtLeast config.home.stateVersion "19.09" then
-        cfg.package.override (old: { cfg = old.cfg or { } // fcfg; })
-      else
-        (pkgs.wrapFirefox.override { config = bcfg; }) cfg.package { };
-    in lib.optional (cfg.package != null) package;
+    home.packages = lib.optional (cfg.finalPackage != null) cfg.finalPackage;
 
     home.file = mkMerge ([{
       "${firefoxConfigPath}/profiles.ini" =
@@ -545,6 +667,11 @@ in {
         || profile.extraConfig != "" || profile.bookmarks != [ ]) {
           text =
             mkUserJs profile.settings profile.extraConfig profile.bookmarks;
+        };
+
+      "${profilesPath}/${profile.path}/containers.json" =
+        mkIf (profile.containers != { }) {
+          text = mkContainersJson profile.containers;
         };
 
       "${profilesPath}/${profile.path}/search.json.mozlz4" = mkIf

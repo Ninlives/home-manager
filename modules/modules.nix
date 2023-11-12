@@ -99,6 +99,7 @@ let
     ./programs/gnome-terminal.nix
     ./programs/go.nix
     ./programs/gpg.nix
+    ./programs/granted.nix
     ./programs/havoc.nix
     ./programs/helix.nix
     ./programs/hexchat.nix
@@ -200,6 +201,7 @@ let
     ./programs/ssh.nix
     ./programs/starship.nix
     ./programs/swaylock.nix
+    ./programs/swayr.nix
     ./programs/taskwarrior.nix
     ./programs/tealdeer.nix
     ./programs/terminator.nix

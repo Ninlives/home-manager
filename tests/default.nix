@@ -84,6 +84,7 @@ import nmt {
     ./modules/programs/git
     ./modules/programs/git-cliff
     ./modules/programs/gpg
+    ./modules/programs/granted
     ./modules/programs/helix
     ./modules/programs/himalaya
     ./modules/programs/htop
@@ -194,6 +195,7 @@ import nmt {
     ./modules/programs/rofi
     ./modules/programs/rofi-pass
     ./modules/programs/swaylock
+    ./modules/programs/swayr
     ./modules/programs/terminator
     ./modules/programs/thunderbird
     ./modules/programs/waybar
