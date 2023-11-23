@@ -169,7 +169,10 @@ let
     else if isDarwin then
       package
     else if versionAtLeast config.home.stateVersion "19.09" then
-      package.override (old: { cfg = old.cfg or { } // fcfg; })
+      package.override (old: {
+        cfg = old.cfg or { } // fcfg;
+        extraPolicies = cfg.policies;
+      })
     else
       (pkgs.wrapFirefox.override { config = bcfg; }) package { };
 
@@ -228,6 +231,17 @@ in {
         type = with types; nullOr package;
         readOnly = true;
         description = "Resulting Firefox package.";
+      };
+
+      policies = mkOption {
+        type = types.attrsOf jsonFormat.type;
+        default = { };
+        description =
+          "[See list of policies](https://mozilla.github.io/policy-templates/).";
+        example = {
+          DefaultDownloadDirectory = "\${home}/Downloads";
+          BlockAboutConfig = true;
+        };
       };
 
       profiles = mkOption {
@@ -441,6 +455,15 @@ in {
                 example = "DuckDuckGo";
                 description = ''
                   The default search engine used in the address bar and search bar.
+                '';
+              };
+
+              privateDefault = mkOption {
+                type = with types; nullOr str;
+                default = null;
+                example = "DuckDuckGo";
+                description = ''
+                  The default search engine used in the Private Browsing.
                 '';
               };
 
@@ -675,8 +698,8 @@ in {
         };
 
       "${profilesPath}/${profile.path}/search.json.mozlz4" = mkIf
-        (profile.search.default != null || profile.search.order != [ ]
-          || profile.search.engines != { }) {
+        (profile.search.default != null || profile.search.privateDefault != null
+          || profile.search.order != [ ] || profile.search.engines != { }) {
             force = profile.search.force;
             source = let
               settings = {
@@ -767,12 +790,18 @@ in {
                     # engine if it's not in profile.search.engines
                     ${profile.search.default} =
                       profile.search.engines.${profile.search.default} or { };
+                  } // {
+                    ${profile.search.privateDefault} =
+                      profile.search.engines.${profile.search.privateDefault} or { };
                   };
                 in sortEngineConfigs (mapAttrs buildEngineConfig engineInput);
 
                 metaData = optionalAttrs (profile.search.default != null) {
                   current = profile.search.default;
                   hash = "@hash@";
+                } // optionalAttrs (profile.search.privateDefault != null) {
+                  private = profile.search.privateDefault;
+                  privateHash = "@privateHash@";
                 } // {
                   useSavedOrder = profile.search.order != [ ];
                 };
@@ -794,14 +823,21 @@ in {
                 profile.path + profile.search.default + disclaimer "Firefox"
               else
                 null;
+
+              privateSalt = if profile.search.privateDefault != null then
+                profile.path + profile.search.privateDefault
+                + disclaimer "Firefox"
+              else
+                null;
             in pkgs.runCommand "search.json.mozlz4" {
               nativeBuildInputs = with pkgs; [ mozlz4a openssl ];
               json = builtins.toJSON settings;
-              inherit salt;
+              inherit salt privateSalt;
             } ''
               if [[ -n $salt ]]; then
                 export hash=$(echo -n "$salt" | openssl dgst -sha256 -binary | base64)
-                mozlz4a <(substituteStream json search.json.in --subst-var hash) "$out"
+                export privateHash=$(echo -n "$privateSalt" | openssl dgst -sha256 -binary | base64)
+                mozlz4a <(substituteStream json search.json.in --subst-var hash --subst-var privateHash) "$out"
               else
                 mozlz4a <(echo "$json") "$out"
               fi
