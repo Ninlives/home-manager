@@ -1309,6 +1309,31 @@ in
           A new module is available: 'programs.ruff'.
         '';
       }
+
+      {
+        time = "2023-11-26T23:18:01+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.signaturepdf'.
+        '';
+      }
+
+      {
+        time = "2023-12-10T08:43:02+00:00";
+        condition = config.wayland.windowManager.hyprland.settings ? source;
+        message = ''
+          Entries in
+
+            wayland.windowManager.hyprland.settings.source
+
+          are now placed at the start of the configuration file. If you relied
+          on the previous placement of the 'source' entries, please set
+
+             wayland.windowManager.hyprland.sourceFirst = false
+
+          to keep the previous behaviour.
+        '';
+      }
     ];
   };
 }
