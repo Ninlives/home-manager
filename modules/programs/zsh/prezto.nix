@@ -16,7 +16,8 @@ let
 
       caseSensitive = mkOption {
         type = types.nullOr types.bool;
-        default = null;
+        # See <https://github.com/nix-community/home-manager/issues/2255>.
+        default = true;
         example = true;
         description =
           "Set case-sensitivity for completion, history lookup, etc.";
@@ -34,7 +35,8 @@ let
       pmoduleDirs = mkOption {
         type = types.listOf types.path;
         default = [ ];
-        example = [ "$HOME/.zprezto-contrib" ];
+        example = literalExpression
+          ''[ "''${config.home.homeDirectory}/.zprezto-contrib" ]'';
         description = "Add additional directories to load prezto modules from.";
       };
 

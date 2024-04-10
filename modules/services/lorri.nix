@@ -7,7 +7,7 @@ let
   cfg = config.services.lorri;
 
 in {
-  meta.maintainers = [ maintainers.gerschtli ];
+  meta.maintainers = [ maintainers.gerschtli maintainers.nyarly ];
 
   options.services.lorri = {
     enable = mkEnableOption "lorri build daemon";
@@ -52,6 +52,16 @@ in {
           PrivateTmp = true;
           ProtectSystem = "strict";
           ProtectHome = "read-only";
+          ReadWritePaths = [
+            # /run/user/1000 for the socket
+            "%t"
+            # Needs to update own cache
+            "%C/lorri"
+            # Needs %C/nix/fetcher-cache-v1.sqlite
+            "%C/nix"
+            "/nix/var/nix/gcroots/per-user/%u"
+          ];
+          CacheDirectory = [ "lorri" ];
           Restart = "on-failure";
           Environment = let
             path = with pkgs;

@@ -22,6 +22,14 @@ let
     set -gx GPG_TTY (tty)
   '' + optionalString cfg.enableSshSupport gpgSshSupportStr;
 
+  gpgNushellInitStr = ''
+    $env.GPG_TTY = (tty)
+  '' + optionalString cfg.enableSshSupport ''
+    ${gpgPkg}/bin/gpg-connect-agent updatestartuptty /bye | ignore
+
+    $env.SSH_AUTH_SOCK = ($env.SSH_AUTH_SOCK? | default (${gpgPkg}/bin/gpgconf --list-dirs agent-ssh-socket))
+  '';
+
   # mimic `gpgconf` output for use in `systemd` unit definitions.
   # we cannot use `gpgconf` directly because it heavily depends on system
   # state, but we need the values at build time. original:
@@ -72,6 +80,11 @@ let
 
 in {
   meta.maintainers = [ maintainers.rycee ];
+
+  imports = [
+    (mkRemovedOptionModule [ "services" "gpg-agent" "pinentryFlavor" ]
+      "Use services.gpg-agent.pinentryPackage instead")
+  ];
 
   options = {
     services.gpg-agent = {
@@ -184,11 +197,10 @@ in {
           configuration file.
         '';
       };
-
-      pinentryFlavor = mkOption {
-        type = types.nullOr (types.enum pkgs.pinentry.flavors);
-        example = "gnome3";
-        default = "gtk2";
+      pinentryPackage = mkOption {
+        type = types.nullOr types.package;
+        example = literalExpression "pkgs.pinentry-gnome3";
+        default = null;
         description = ''
           Which pinentry interface to use. If not
           `null`, it sets
@@ -200,8 +212,6 @@ in {
           ```nix
           services.dbus.packages = [ pkgs.gcr ];
           ```
-          For this reason, the default is `gtk2` for
-          now.
         '';
       };
 
@@ -214,6 +224,10 @@ in {
       };
 
       enableFishIntegration = mkEnableOption "Fish integration" // {
+        default = true;
+      };
+
+      enableNushellIntegration = mkEnableOption "Nushell integration" // {
         default = true;
       };
     };
@@ -233,8 +247,8 @@ in {
           "max-cache-ttl ${toString cfg.maxCacheTtl}"
           ++ optional (cfg.maxCacheTtlSsh != null)
           "max-cache-ttl-ssh ${toString cfg.maxCacheTtlSsh}"
-          ++ optional (cfg.pinentryFlavor != null)
-          "pinentry-program ${pkgs.pinentry.${cfg.pinentryFlavor}}/bin/pinentry"
+          ++ optional (cfg.pinentryPackage != null)
+          "pinentry-program ${lib.getExe cfg.pinentryPackage}"
           ++ [ cfg.extraConfig ]);
 
       home.sessionVariablesExtra = optionalString cfg.enableSshSupport ''
@@ -247,6 +261,9 @@ in {
       programs.zsh.initExtra = mkIf cfg.enableZshIntegration gpgInitStr;
       programs.fish.interactiveShellInit =
         mkIf cfg.enableFishIntegration gpgFishInitStr;
+
+      programs.nushell.extraEnv =
+        mkIf cfg.enableNushellIntegration gpgNushellInitStr;
     }
 
     (mkIf (cfg.sshKeys != null) {

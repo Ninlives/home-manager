@@ -11,44 +11,21 @@ export TEXTDOMAINDIR=@OUT@/share/locale
 # shellcheck disable=1091
 source @HOME_MANAGER_LIB@
 
-function nixProfileList() {
-    # We attempt to use `--json` first (added in Nix 2.17). Otherwise attempt to
-    # parse the legacy output format.
-    {
-        nix profile list --json 2>/dev/null \
-            | jq -r --arg name "$1" '.elements[].storePaths[] | select(endswith($name))'
-    } || {
-        nix profile list \
-            | { grep "$1\$" || test $? = 1; } \
-            | cut -d ' ' -f 4
-    }
-}
-
-function removeByName() {
-    nixProfileList "$1" | xargs -t $DRY_RUN_CMD nix profile remove $VERBOSE_ARG
-}
-
 function setNixProfileCommands() {
-    if [[ -e $HOME/.nix-profile/manifest.json ]] ; then
+    if  [[ -e $HOME/.nix-profile/manifest.json \
+        || -e ${XDG_STATE_HOME:-$HOME/.local/state}/nix/profile/manifest.json ]] ; then
+
         LIST_OUTPATH_CMD="nix profile list"
-        REMOVE_CMD="removeByName"
     else
         LIST_OUTPATH_CMD="nix-env -q --out-path"
-        REMOVE_CMD="nix-env --uninstall"
     fi
 }
 
-function setVerboseAndDryRun() {
+function setVerboseArg() {
     if [[ -v VERBOSE ]]; then
         export VERBOSE_ARG="--verbose"
     else
         export VERBOSE_ARG=""
-    fi
-
-    if [[ -v DRY_RUN ]] ; then
-        export DRY_RUN_CMD=echo
-    else
-        export DRY_RUN_CMD=""
     fi
 }
 
@@ -160,6 +137,10 @@ function setHomeManagerPathVariables() {
         return
     fi
 
+    _iVerbose "Sanity checking Nix"
+    nix-build --quiet --expr '{}' --no-out-link > /dev/null 2>&1 || true
+    nix-env -q > /dev/null 2>&1 || true
+
     declare -r globalNixStateDir="${NIX_STATE_DIR:-/nix/var/nix}"
     declare -r globalProfilesDir="$globalNixStateDir/profiles/per-user/$USER"
     declare -r globalGcrootsDir="$globalNixStateDir/gcroots/per-user/$USER"
@@ -177,7 +158,7 @@ function setHomeManagerPathVariables() {
         declare -gr HM_PROFILE_DIR="$globalProfilesDir"
     else
         _iError 'Could not find suitable profile directory, tried %s and %s' \
-                "$HM_STATE_DIR/profiles" "$globalProfilesDir" >&2
+                "$userNixStateDir/profiles" "$globalProfilesDir" >&2
         exit 1
     fi
 }
@@ -281,6 +262,9 @@ function doInit() {
         withFlake=1
     fi
 
+    local homeManagerUrl="github:nix-community/home-manager"
+    local nixpkgsUrl="github:nixos/nixpkgs/nixos-unstable"
+
     while (( $# > 0 )); do
         local opt="$1"
         shift
@@ -291,6 +275,14 @@ function doInit() {
                 ;;
             --switch)
                 switch=1
+                ;;
+            --home-manager-url)
+                homeManagerUrl="$1"
+                shift
+                ;;
+            --nixpkgs-url)
+                nixpkgsUrl="$1"
+                shift
                 ;;
             -*)
                 _iError "%s: unknown option '%s'" "$0" "$opt" >&2
@@ -406,6 +398,10 @@ $xdgVars
   #
   # or
   #
+  #  ~/.local/state/nix/profiles/profile/etc/profile.d/hm-session-vars.sh
+  #
+  # or
+  #
   #  /etc/profiles/per-user/$USER/etc/profile.d/hm-session-vars.sh
   #
   home.sessionVariables = {
@@ -438,9 +434,9 @@ EOF
 
   inputs = {
     # Specify the source of Home Manager and Nixpkgs.
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "$nixpkgsUrl";
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "$homeManagerUrl";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -584,10 +580,14 @@ function presentNews() {
 }
 
 function doEdit() {
-    if [[ ! -v EDITOR || -z $EDITOR ]]; then
-        # shellcheck disable=2016
-        _i 'Please set the $EDITOR environment variable' >&2
-        return 1
+    if [[ ! -v VISUAL || -z $VISUAL ]]; then
+        if [[ ! -v EDITOR || -z $EDITOR ]]; then
+            # shellcheck disable=2016
+            _i 'Please set the $EDITOR or $VISUAL environment variable' >&2
+            return 1
+        fi
+    else
+        EDITOR=$VISUAL
     fi
 
     setConfigFile
@@ -674,7 +674,7 @@ function doListGens() {
 # generations to remove.
 function doRmGenerations() {
     setHomeManagerPathVariables
-    setVerboseAndDryRun
+    setVerboseArg
 
     pushd "$HM_PROFILE_DIR" > /dev/null
 
@@ -687,7 +687,7 @@ function doRmGenerations() {
             _i 'Cannot remove the current generation %s' "$generationId" >&2
         else
             _i 'Removing generation %s' "$generationId"
-            $DRY_RUN_CMD rm $VERBOSE_ARG $linkName
+            run rm $VERBOSE_ARG $linkName
         fi
     done
 
@@ -716,7 +716,7 @@ function doListPackages() {
     local outPath
     outPath="$($LIST_OUTPATH_CMD | grep -o '/.*home-manager-path$')"
     if [[ -n "$outPath" ]] ; then
-        nix-store -q --references "$outPath" | sed 's/[^-]*-//'
+        nix-store -q --references "$outPath" | sed 's/[^-]*-//' | sort --ignore-case
     else
         _i 'No home-manager packages seem to be installed.' >&2
     fi
@@ -822,7 +822,6 @@ function doShowNews() {
 
 function doUninstall() {
     setHomeManagerPathVariables
-    setVerboseAndDryRun
     setNixProfileCommands
 
     _i 'This will remove Home Manager from your system.'
@@ -840,30 +839,17 @@ function doUninstall() {
         y|Y)
             _i "Switching to empty Home Manager configuration..."
             HOME_MANAGER_CONFIG="$(mktemp --tmpdir home-manager.XXXXXXXXXX)"
-            echo "{ lib, ... }: {"  > "$HOME_MANAGER_CONFIG"
-            echo "  home.file = lib.mkForce {};" >> "$HOME_MANAGER_CONFIG"
-            echo "  home.stateVersion = \"18.09\";" >> "$HOME_MANAGER_CONFIG"
-            echo "  manual.manpages.enable = false;" >> "$HOME_MANAGER_CONFIG"
-            echo "}" >> "$HOME_MANAGER_CONFIG"
-            doSwitch
-            $DRY_RUN_CMD $REMOVE_CMD home-manager-path || true
-            rm "$HOME_MANAGER_CONFIG"
-
-            if [[ -e $HM_DATA_HOME ]]; then
-                $DRY_RUN_CMD rm $VERBOSE_ARG -r "$HM_DATA_HOME"
-            fi
-
-            if [[ -e $HM_STATE_DIR ]]; then
-                $DRY_RUN_CMD rm $VERBOSE_ARG -r "$HM_STATE_DIR"
-            fi
-
-            if [[ -e $HM_PROFILE_DIR ]]; then
-                $DRY_RUN_CMD rm $VERBOSE_ARG "$HM_PROFILE_DIR/home-manager"*
-            fi
-
-            if [[ -e $HM_GCROOT_LEGACY_PATH ]]; then
-                $DRY_RUN_CMD rm $VERBOSE_ARG "$HM_GCROOT_LEGACY_PATH"
-            fi
+            cat > "$HOME_MANAGER_CONFIG" <<EOF
+{
+  uninstall = true;
+  home.username = "$USER";
+  home.homeDirectory = "$HOME";
+  home.stateVersion = "23.11";
+}
+EOF
+            # shellcheck disable=2064
+            trap "rm '$HOME_MANAGER_CONFIG'" EXIT
+            doSwitch --switch
             ;;
         *)
             _i "Yay!"
@@ -914,7 +900,7 @@ function doHelp() {
     echo
     echo "  help         Print this help"
     echo
-    echo "  edit         Open the home configuration in \$EDITOR"
+    echo "  edit         Open the home configuration in \$VISUAL or \$EDITOR"
     echo
     echo "  option OPTION.NAME"
     echo "               Inspect configuration option named OPTION.NAME."
@@ -1032,7 +1018,7 @@ while [[ $# -gt 0 ]]; do
             export VERBOSE=1
             ;;
         --version)
-            echo 23.11-pre
+            echo 24.05-pre
             exit 0
             ;;
         *)

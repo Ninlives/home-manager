@@ -207,7 +207,8 @@ let
       modifiers = if isAttrs def then mods else "";
       expansion = if isAttrs def then def.expansion else def;
     in "abbr --add ${modifiers} -- ${name}"
-    + optionalString (expansion != null) " \"${expansion}\"") cfg.shellAbbrs);
+    + optionalString (expansion != null) " ${escapeShellArg expansion}")
+    cfg.shellAbbrs);
 
   aliasesStr = concatStringsSep "\n"
     (mapAttrsToList (k: v: "alias ${k} ${escapeShellArg v}") cfg.shellAliases);
@@ -311,6 +312,15 @@ in {
         description = ''
           Shell script code called during interactive fish shell
           initialisation.
+        '';
+      };
+
+      shellInitLast = mkOption {
+        type = types.lines;
+        default = "";
+        description = ''
+          Shell script code called during interactive fish shell
+          initialisation, this will be the last thing executed in fish startup.
         '';
       };
     };
@@ -468,6 +478,8 @@ in {
           ${cfg.interactiveShellInit}
 
         end
+
+        ${cfg.shellInitLast}
       '';
     }
     {

@@ -42,14 +42,10 @@ let
       };
     };
 
-    config = {
-      id = mkDefault (builtins.hashString "sha256" config.message);
-    };
+    config = { id = mkDefault (builtins.hashString "sha256" config.message); };
   });
 
-in
-
-{
+in {
   meta.maintainers = [ maintainers.rycee ];
 
   options = {
@@ -97,9 +93,8 @@ in
   };
 
   config = {
-    news.json.output = pkgs.writeText "hm-news.json" (builtins.toJSON {
-      inherit (cfg) display entries;
-    });
+    news.json.output = pkgs.writeText "hm-news.json"
+      (builtins.toJSON { inherit (cfg) display entries; });
 
     # Add news entries in chronological order (i.e., latest time
     # should be at the bottom of the list). The time should be
@@ -255,7 +250,8 @@ in
 
       {
         time = "2021-09-23T17:04:48+00:00";
-        condition = hostPlatform.isLinux && config.services.screen-locker.enable;
+        condition = hostPlatform.isLinux
+          && config.services.screen-locker.enable;
         message = ''
           'xautolock' is now optional in 'services.screen-locker', and the
           'services.screen-locker' options have been reorganized for clarity.
@@ -1332,6 +1328,152 @@ in
              wayland.windowManager.hyprland.sourceFirst = false
 
           to keep the previous behaviour.
+        '';
+      }
+
+      {
+        time = "2023-12-19T22:57:52+00:00";
+        message = ''
+          A new module is available: 'programs.sapling'.
+        '';
+      }
+
+      {
+        time = "2023-12-20T11:41:10+00:00";
+        message = ''
+          A new module is available: 'programs.gradle'.
+        '';
+      }
+
+      {
+        time = "2023-12-28T08:28:26+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.osmscout-server'.
+        '';
+      }
+
+      {
+        time = "2023-12-28T13:01:15+00:00";
+        message = ''
+          A new module is available: 'programs.sftpman'.
+        '';
+      }
+
+      {
+        time = "2023-12-29T08:22:40+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'programs.bemenu'.
+        '';
+      }
+
+      {
+        time = "2024-01-01T09:09:42+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'programs.i3blocks'.
+        '';
+      }
+
+      {
+        time = "2024-01-03T19:25:09+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'xdg.portal'.
+        '';
+      }
+
+      {
+        time = "2024-01-20T23:45:07+00:00";
+        message = ''
+          A new module is available: 'programs.mise'.
+
+          This module replaces 'programs.rtx', which has been removed.
+        '';
+      }
+
+      {
+        time = "2024-01-27T22:53:00+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.wob'.
+        '';
+      }
+
+      {
+        time = "2024-02-05T22:33:54+00:00";
+        message = ''
+          A new module is available: 'services.arrpc'
+        '';
+      }
+
+      {
+        time = "2024-02-05T22:45:37+00:00";
+        message = ''
+          A new module is available: 'programs.jetbrains-remote'
+        '';
+      }
+
+      {
+        time = "2024-02-21T23:01:27+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'wayland.windowManager.river'.
+        '';
+      }
+
+      {
+        time = "2024-03-08T22:20:04+00:00";
+        message = ''
+          A new module is available: 'programs.zk'
+        '';
+      }
+
+      {
+        time = "2024-03-08T22:23:24+00:00";
+        message = ''
+          A new module is available: 'programs.ranger'.
+        '';
+      }
+
+      {
+        time = "2024-03-13T13:28:22+00:00";
+        message = ''
+          A new module is available: 'programs.joplin-desktop'.
+        '';
+      }
+
+      {
+        time = "2024-03-14T07:22:09+00:00";
+        condition = config.services.gpg-agent.enable;
+        message = ''
+          'services.gpg-agent.pinentryFlavor' has been removed and replaced by
+          'services.gpg-agent.pinentryPackage'.
+        '';
+      }
+
+      {
+        time = "2024-03-14T07:22:59+00:00";
+        condition = config.programs.rbw.enable;
+        message = ''
+          'programs.rbw.pinentry' has been simplified to only accept 'null' or
+          a package.
+        '';
+      }
+
+      {
+        time = "2024-03-15T08:39:52+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.activitywatch'.
+        '';
+      }
+
+      {
+        time = "2024-04-08T21:43:38+00:00";
+        message = ''
+          A new module is available: 'programs.bun'.
         '';
       }
     ];

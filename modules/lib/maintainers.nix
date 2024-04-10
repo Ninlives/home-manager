@@ -77,6 +77,12 @@
     githubId = 32838899;
     name = "Daniel Wagenknecht";
   };
+  jack5079 = {
+    name = "Jack W.";
+    email = "nix@jack.cab";
+    github = "jack5079";
+    githubId = 29169102;
+  };
   jkarlson = {
     email = "jekarlson@gmail.com";
     github = "jkarlson";
@@ -112,6 +118,12 @@
     email = "foo.dogsquared@gmail.com";
     github = "foo-dogsquared";
     githubId = 34962634;
+  };
+  fpob = {
+    name = "Filip Pobořil";
+    email = "fpob@proton.me";
+    github = "fpob";
+    githubId = 6289078;
   };
   olmokramer = {
     name = "Olmo Kramer";
@@ -159,6 +171,12 @@
     github = "loicreynier";
     githubId = 88983487;
   };
+  LucasWagler = {
+    name = "Lucas Wagler";
+    email = "lucas@wagler.dev";
+    github = "LucasWagler";
+    githubId = 32136449;
+  };
   matrss = {
     name = "Matthias Riße";
     email = "matrss@users.noreply.github.com";
@@ -199,6 +217,12 @@
       fingerprint = "F0E0 0311 126A CD72 4392  25E6 68BF 2EAE 6D91 CAFF";
     }];
   };
+  silmarp = {
+    name = "Silmar Pereira da Silva Junior";
+    email = "silmarjr2@gmail.com";
+    github = "silmarp";
+    githubID = 67292496;
+  };
   fendse = {
     email = "46252070+Fendse@users.noreply.github.com";
     github = "Fendse";
@@ -216,6 +240,11 @@
     github = "GaetanLepage";
     githubId = 33058747;
     name = "Gaetan Lepage";
+  };
+  genericnerdyusername = {
+    email = "genericnerdyusername@proton.me";
+    github = "genericnerdyusername";
+    githubId = 111183546;
   };
   maximsmol = {
     email = "maximsmol@gmail.com";
@@ -316,6 +345,12 @@
     email = "nurelin@users.noreply.github.com";
     github = "nurelin";
     githubId = 5276274;
+  };
+  omernaveedxyz = {
+    name = "Omer Naveed";
+    email = "omer@omernaveed.dev";
+    github = "omernaveedxyz";
+    githubId = 112912585;
   };
   otavio = {
     email = "otavio.salvador@ossystems.com.br";
@@ -470,5 +505,17 @@
     email = "vcs@ersei.net";
     github = "9p4";
     githubId = 17993169;
+  };
+  britter = {
+    name = "Benedikt Ritter";
+    email = "beneritter@gmail.com";
+    github = "britter";
+    githubId = 1327662;
+  };
+  zorrobert = {
+    name = "zorrobert";
+    email = "zorrobert@mailbox.org";
+    github = "zorrobert";
+    githubId = 118135271;
   };
 }
