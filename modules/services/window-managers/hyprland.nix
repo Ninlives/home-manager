@@ -102,6 +102,10 @@ in {
         ];
         description = "Extra commands to be run after D-Bus activation.";
       };
+
+      enableXdgAutostart = lib.mkEnableOption ''
+        autostart of applications using
+        {manpage}`systemd-xdg-autostart-generator(8)`'';
     };
 
     xwayland.enable = lib.mkEnableOption "XWayland" // { default = true; };
@@ -232,8 +236,9 @@ in {
         }) + lib.optionalString (cfg.extraConfig != "") cfg.extraConfig;
 
       onChange = lib.mkIf (cfg.package != null) ''
-        ( # Execute in subshell so we don't poision environment with vars
-          if [[ -d "/tmp/hypr" ]]; then
+        (
+          XDG_RUNTIME_DIR=''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+          if [[ -d "/tmp/hypr" || -d "$XDG_RUNTIME_DIR/hypr" ]]; then
             for i in $(${cfg.finalPackage}/bin/hyprctl instances -j | jq ".[].instance" -r); do
               ${cfg.finalPackage}/bin/hyprctl -i "$i" reload config-only
             done
@@ -247,8 +252,12 @@ in {
         Description = "Hyprland compositor session";
         Documentation = [ "man:systemd.special(7)" ];
         BindsTo = [ "graphical-session.target" ];
-        Wants = [ "graphical-session-pre.target" ];
+        Wants = [ "graphical-session-pre.target" ]
+          ++ lib.optional cfg.systemd.enableXdgAutostart
+          "xdg-desktop-autostart.target";
         After = [ "graphical-session-pre.target" ];
+        Before = lib.mkIf cfg.systemd.enableXdgAutostart
+          [ "xdg-desktop-autostart.target" ];
       };
     };
 
