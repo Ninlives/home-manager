@@ -2,7 +2,8 @@
 
 let
   inherit (lib)
-    all filterAttrs hasAttr isStorePath literalExpression optionalAttrs types;
+    all filterAttrs hasAttr isStorePath literalExpression optional optionalAttrs
+    types;
   inherit (lib.options) mkEnableOption mkOption;
   inherit (lib.modules) mkIf mkMerge;
 
@@ -69,8 +70,8 @@ let
         };
 
         modules-left = mkOption {
-          type = listOf str;
-          default = [ ];
+          type = nullOr (listOf str);
+          default = null;
           description = "Modules that will be displayed on the left.";
           example = literalExpression ''
             [ "sway/workspaces" "sway/mode" "wlr/taskbar" ]
@@ -78,8 +79,8 @@ let
         };
 
         modules-center = mkOption {
-          type = listOf str;
-          default = [ ];
+          type = nullOr (listOf str);
+          default = null;
           description = "Modules that will be displayed in the center.";
           example = literalExpression ''
             [ "sway/window" ]
@@ -87,8 +88,8 @@ let
         };
 
         modules-right = mkOption {
-          type = listOf str;
-          default = [ ];
+          type = nullOr (listOf str);
+          default = null;
           description = "Modules that will be displayed on the right.";
           example = literalExpression ''
             [ "mpd" "custom/mymodule#with-css-id" "temperature" ]
@@ -310,6 +311,10 @@ in {
           Documentation = "https://github.com/Alexays/Waybar/wiki";
           PartOf = [ "graphical-session.target" ];
           After = [ "graphical-session-pre.target" ];
+          X-Restart-Triggers = optional (settings != [ ])
+            "${config.xdg.configFile."waybar/config".source}"
+            ++ optional (cfg.style != null)
+            "${config.xdg.configFile."waybar/style.css".source}";
         };
 
         Service = {
